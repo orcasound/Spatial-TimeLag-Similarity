@@ -16,4 +16,14 @@ This determination can be carried out for each PSD bands in a spectrogram and th
 
 Here is an example of the calculation of the psd lags and corresponding maximum of the correlation between the two PSD's  The actual lag was set to 40 and the scatter plot shows that the high correlation PSD pairs have calculated lags close to the input lag value of 40 used to create the spectrogram-like arrays.
 
+
 ![Maximum Correlation vs Lag](MaxCorrVsLag.png)
+
+The "Quality" of the estimated correlation between two spectrograms is calculated as follows:
+    Sort the psd lags by the magnitude of their correlations.
+    Work down the sorted lag list calculating the mean and standard deviation of the lags until an 'excursion' in the difference between the next lag and the mean of all the lags so far.
+    Report the mean, standard deviation, count in this peak, and Quality (count/Std dev)
+
+![Histogram of lags](HistogramOfLags.png)
+
+Note that all the Zero lag values are due to the many PSD's for which a significant correlation was not found.
