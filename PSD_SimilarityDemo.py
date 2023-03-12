@@ -33,6 +33,20 @@ def calcCorrAry(psdAry1, psdAry2):
         corrAry[i,:] = correlation
     return corrAry, lagList, maxCorrList
 
+def findLagPeaks(maxCorrList, lagList):
+    # maxCorrList and lagList sorted in descending order of maxCorr values
+    done = False
+    i = 2
+    lagPeakList = [lagList[0], lagList[1]]
+    while not done:
+
+        lagPeakMean = np.mean(lagPeakList)
+        lagPeakSig = np.std(lagPeakList)
+#        print(i, lagPeakMean, lagList[i], lagPeakSig)
+        if abs(lagPeakMean - lagList[i])/lagPeakSig > 5 or i == len(lagList):
+            return lagPeakMean, lagPeakSig, len(lagPeakList)
+        lagPeakList.append(lagList[i])
+        i += 1
 def gaussian(x, amplitude, mean, stddev):
     return amplitude * np.exp(-((x - mean) / 4 / stddev)**2)
 
@@ -96,6 +110,17 @@ plt.title("Lags vs Maximum Correlation for each PSD band\nActual Lag {}".format(
 plt.xlabel("Optimum Lag between PSDs at each PSD level")
 plt.ylabel("Maximum Correlation for each PSD pair")
 plt.show()
+
+maxCorrList, lagList = zip(*sorted(zip(maxCorrList, lagList), reverse=True))  # sort lists in decending order of correlation
+
+peakLag, widthPeak, NinPeak = findLagPeaks(maxCorrList, lagList)
+Q = NinPeak/widthPeak
+
+plt.hist(lagList, bins=25, density=True)
+plt.title("Histogram of lags, peak lag {:0.2f}, += {:0.2f}, N pts {}\n Quality (N in peak / width) {:0.2f}".format(peakLag, widthPeak, NinPeak, Q))
+plt.show()
+
+
 # lagHist, bin_edges = np.histogram(lagList, bins = 50)
 # plt.plot(bin_edges[:-1], lagHist)
 # plt.show()
