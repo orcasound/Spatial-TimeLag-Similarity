@@ -63,7 +63,7 @@ correlation = correlate(psd1, psd2, mode="full")
 lags = correlation_lags(psd1.size, psd2.size, mode="full")
 lagCorr = lags[np.argmax(correlation)]
 predictedLag = lags[np.argmax(correlation)]
-print("Lag of highest correlation {}  Highest correlation {:0.2f}  Index of highest correlation {}  Predicted lag {}".\
+print("Assessment of single PSD pair\nLag of highest correlation {}  Highest correlation {:0.2f}  Index of highest correlation {}  Predicted lag {}".\
       format(lagCorr, np.max(correlation), np.argmax(correlation), predictedLag))
 
 plt.plot(lags, correlation)
