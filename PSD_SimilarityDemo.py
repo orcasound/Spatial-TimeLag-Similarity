@@ -12,7 +12,7 @@ def insertSignal(i1, i2, amp, psd):
     for i in range(i1,i2):
         psd[i] += amp  # makes a 'signsl' between indices i1 and i2 in a psd already filled with random values ranging 0 -> 1
 
-def calcCorrAry(psdAry1, psdAry2):
+def calcCorrAry(psdAry1, psdAry2, doPlot):
     Nf = psdAry1.shape[0]
     Nt = psdAry1.shape[1]
     corrAry = np.zeros([Nf, 2*Nt-1])
@@ -25,9 +25,9 @@ def calcCorrAry(psdAry1, psdAry2):
         lags = correlation_lags(psd1.size, psd2.size, mode="full")
         maxCorrList[i] = np.max(correlation)
         predictedLag = lags[np.argmax(correlation)]
-        if i >= 100 and i <= 105:
+        if doPlot and i >= 100 and i <= 105:
             plt.plot(lags, correlation)
-            plt.title("i = {}, amp = {:0.2f} predicted Lag {}".format(i, np.max(psd1), predictedLag))
+            plt.title("Array row i = {}, max psd in row = {:0.2f} predicted Lag {}".format(i, np.max(psd1), predictedLag))
             plt.show()
         lagList[i] = predictedLag
         corrAry[i,:] = correlation
@@ -50,6 +50,26 @@ def findLagPeaks(maxCorrList, lagList):
 def gaussian(x, amplitude, mean, stddev):
     return amplitude * np.exp(-((x - mean) / 4 / stddev)**2)
 
+def correlateArrays(psdAry1, psdAry2, doPlot):
+    corrAry, lagList, maxCorrList = calcCorrAry(psdAry1, psdAry2, doPlot)
+    if doPlot:
+        plt.scatter(lagList, maxCorrList)
+        plt.title("Lags vs Maximum Correlation for each PSD band\nActual Lag {}".format(lag))
+        plt.xlabel("Optimum Lag between PSDs at each PSD level")
+        plt.ylabel("Maximum Correlation for each PSD pair")
+        plt.show()
+
+    maxCorrList, lagList = zip(
+        *sorted(zip(maxCorrList, lagList), reverse=True))  # sort lists in decending order of correlation
+
+    peakLag, widthPeak, NinPeak = findLagPeaks(maxCorrList, lagList)
+    Q = NinPeak / widthPeak
+    if doPlot:
+        plt.hist(lagList, bins=25, density=True)
+        plt.title("Histogram of lags, peak lag {:0.2f}, += {:0.2f}, N pts {}\n Quality (N in peak / width) {:0.2f}".format(
+            peakLag, widthPeak, NinPeak, Q))
+        plt.show()
+    return peakLag, Q
 ###################################################################
 np.random.seed(0)  # set seed so random number generator repeast for each run
 
@@ -89,7 +109,8 @@ plt.show()
 Nf = 256
 psdAry1 = np.random.rand(Nt, Nf)
 psdAry2 = np.random.rand(Nt, Nf)
-for i in range(Nf):
+
+for i in range(Nf):  # create synthetic spectrograms
     psd = np.random.rand(Nt)
     thisAmp = 2*amp*np.random.rand()
     insertSignal(lag + 25+i//3, lag + 25+i//3+25, thisAmp, psd)
@@ -103,22 +124,11 @@ fig.suptitle("amp is random up to {} and lag is {}".format(amp, lag))
 axs[0].imshow(psdAry1)
 axs[1].imshow(psdAry2)
 plt.show()
+print("Lag between synthetic spectrograms is ", lag)
+doPlot = True
+overallLag, Q = correlateArrays(psdAry1, psdAry2, doPlot)
+print("Overall lag between spectrograms {:0.2f} Quality = {:0.2f}".format(overallLag, Q))
 
-corrAry, lagList, maxCorrList   = calcCorrAry(psdAry1, psdAry2)
-plt.scatter(lagList, maxCorrList)
-plt.title("Lags vs Maximum Correlation for each PSD band\nActual Lag {}".format(lag))
-plt.xlabel("Optimum Lag between PSDs at each PSD level")
-plt.ylabel("Maximum Correlation for each PSD pair")
-plt.show()
-
-maxCorrList, lagList = zip(*sorted(zip(maxCorrList, lagList), reverse=True))  # sort lists in decending order of correlation
-
-peakLag, widthPeak, NinPeak = findLagPeaks(maxCorrList, lagList)
-Q = NinPeak/widthPeak
-
-plt.hist(lagList, bins=25, density=True)
-plt.title("Histogram of lags, peak lag {:0.2f}, += {:0.2f}, N pts {}\n Quality (N in peak / width) {:0.2f}".format(peakLag, widthPeak, NinPeak, Q))
-plt.show()
 
 
 # lagHist, bin_edges = np.histogram(lagList, bins = 50)
